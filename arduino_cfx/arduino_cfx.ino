@@ -14,16 +14,17 @@
    Operation: A button on pin 10 is checked for on/off status during start up.
    Depending on the button state, a curve mode is selected. The X1 then
    transmits MIDI values to the Arduino RX pin. Calculations based on fader
-   position are made, and the results are output through pins 9 and 11.
+   position are made, and volume values between 0 and 1023 are output to both
+   channels using pins 9 and 11.
   -------------------------------------------------------------------------------
    Notes: The Infinium X1 wires are labeled from left to right, coming from the
-   base of the crossfader (careful, wires swap at connector!):
+   base of the crossfader (careful, wires swap at connector depending on model!):
 
    Red = GROUND ||  BLACK = RX || BLACK: POWER (3.3V)
 
-   A serial connection must be opened at 31250 baud rate (MIDI) to read the data
-   for debugging. The Arduino IDE serial monitor cannot interpret information at
-   this rate, so use PuTTY with the serial monitor instead.
+   A serial connection must be opened at 31250 baud rate (MIDI) to read incoming
+   data from the X1 (for debugging). The Arduino IDE serial monitor cannot 
+   interpret information at this rate, so use PuTTY's serial monitor instead.
 
    Included in the file folder is an Excel spreadsheet with graphs that display
    the available curve modes and their values. Can be used to calculate other
@@ -31,6 +32,9 @@
 */
 
 /* Update log:
+ *  12/01/19: -Adjusted max volumes to match VCA output values (0 through 1023)
+ *             and adjusted all calculations to fit within this range.
+ *            -Worked on values for other curve modes in Excel (not implemented).
     11/29/19: -Commented out the variable assignments that are always
               -constant. Uncomment these for debugging in PuTTY.
               -Added detailed description, instructions, and method of operation.
@@ -81,33 +85,33 @@ void setup() {
 void loop() {
   butState = digitalRead(10);               // check state of button at start
 
-  if (butState == 1) {                      // smooth curve mode
+  if (butState == 1) {                      // transition curve mode
     while (true) {
       if (Serial.available()) {
         cfx = Serial.read();                // get fader position
 
         if (cfx == 0) {
           analogWrite(9, 0);                // set volume A to off
-          analogWrite(11, 252);             // set volume B to max
+          analogWrite(11, 1008);             // set volume B to max
         } else if (cfx == 127) {
-          analogWrite(9, 252);              // set volume A to max
+          analogWrite(9, 1008);              // set volume A to max
           analogWrite(11, 0);               // set volume B to off
         } else if (cfx < 63 && cfx > 0) {
-          // volB = 252;                    // set volume A based on position
-          volA = cfx * 4;                   // volume B is set to max
+          // volB = 1008;                    // set volume A based on position
+          volA = cfx * 8;                   // volume B is set to max
           analogWrite(9, volA);
           analogWrite(11, volB);
         } else if (cfx > 64 && cfx < 127) {
-          // volA = 252;
-          volB = 256 - (cfx * 4);           // set volume B based on position,
-          volB = 252 + volB;                // volume A is set to max
-          analogWrite(9, 252);
+          // volA = 1008;
+          volB = 1024 - (cfx * 8);           // set volume B based on position,
+          volB = 1008 + volB;                // volume A is set to max
+          analogWrite(9, 1008);
           analogWrite(11, volB);
         } else {
-          // volA = 252;
-          // volB = 252;
-          analogWrite(9, 252);              // set both volumes to max
-          analogWrite(11, 252);
+          // volA = 1008;
+          // volB = 1008;
+          analogWrite(9, 1008);              // set both volumes to max
+          analogWrite(11, 1008);
         }
         // debug();
       }
@@ -118,21 +122,21 @@ void loop() {
         cfx = Serial.read();      // get fader position
         if (cfx == 0) {
           // volA = 0;
-          // volB = 252;
+          // volB = 1008;
           analogWrite(9, 0);      // set volume A to off
-          analogWrite(11, 252);   // set volume B to max
+          analogWrite(11, 1008);   // set volume B to max
         }
         else if (cfx == 127) {
-          // volA = 252;
+          // volA = 1008;
           // volB = 0;
-          analogWrite(9, 252);    // set volume A to max
+          analogWrite(9, 1008);    // set volume A to max
           analogWrite(11, 0);     // set volume B to off
         }
         else {
-          // volA = 252;
-          // volB = 252;
-          analogWrite(9, 252);    // set both volumes to max
-          analogWrite(11, 252);
+          // volA = 1008;
+          // volB = 1008;
+          analogWrite(9, 1008);    // set both volumes to max
+          analogWrite(11, 1008);
         }
         // debug();
       }
